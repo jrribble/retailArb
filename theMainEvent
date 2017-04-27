@@ -1,0 +1,322 @@
+def WalClearancey():
+    import WalAmClass
+    import time
+    import datetime
+
+    print(datetime.datetime.now())
+
+    #Here's where I get the Walmart Clearance Feed!
+
+    #PICK ONE FROM THE 3 BELOW
+    frap = WalAmClass.walcleary()
+    #frap = WalAmClass.walspecialy()
+    #frap = WalAmClass.walrolly()
+        #if 'marketplace'==True:
+
+    beavis = []
+
+    #Here's where I take out the cap I don't want from the Walmart Feed
+    for each in frap:
+        #beavis.append(each[1]['marketplace'])
+        if each[1]['marketplace'] != True and each[1]['stock'] != 'Not available' and each[1]['availableOnline'] == True:
+        #!!!!!!!!!!!!Trying the next line out of curiosity.  Change back to the line directly above!!!!!!!!!
+        #if each[1]['stock'] != 'Not available' and each[1]['availableOnline'] == True:
+            beavis.append(each[1])
+
+    frap = []  #clear the memory to free it up
+    #print(beavis)#this is only for now so I can compare to the Amazon output
+
+    n = len(beavis)
+    #maybe add something here that saves the last n to an external location and then checks if n is different from the
+    #  last time it ran and ends the program if it is
+    print(n)
+    t = n//5
+
+    finalList = []
+    #there must be a way to easily remove to first index of a list, but since I haven't figured it out, I'm doing this...
+    interim = []
+
+    #Here's where I get the ASIN numbers, AmRank and shipping Weight for each Walmart UPC and combine
+    # Walmart UPC, Walmart Price, Amazon ASIN, Amazon weight and Amazon Rank into one list item
+    for i in range(t): #for i in range(t): #uncomment this and let er rip when ready to iterate through each group of 5
+        #the function returns a value into a list bracket, then appends beavis values into it
+        upcs = []
+        safeUpcs = ['012345678900', '012345678901', '012345678902', '012345678903', '012345678904']  #bogus UPCs to avoide fatal error
+        for g in range(5):
+            try:
+                upcChal = beavis[g]['upc']
+                upcs.append(upcChal)
+            except:
+                upcChal = safeUpcs[0]
+                del safeUpcs[0]
+                upcs.append(upcChal)
+        try:
+            interim.append(WalAmClass.amazonprody(upcs[0], upcs[1], upcs[2], upcs[3], upcs[4]))
+        except:
+            interim.append([['Not Available', 0.0, 'No Rank'], ['Not Available', 0.0, 'No Rank'],
+                            ['Not Available', 0.0, 'No Rank'], ['Not Available', 0.0, 'No Rank'],
+                            ['Not Available', 0.0, 'No Rank']])
+        #print(interim)
+        for z in range(5):
+            finalList.append([upcs[0], beavis[0]['salePrice'], interim[0][0][0], interim[0][0][1], interim[0][0][2]])
+            print([upcs[0], beavis[0]['salePrice'], interim[0][0][0], interim[0][0][1], interim[0][0][2]])
+            del upcs[0]
+            del beavis[0]
+            del interim[0][0]
+        interim.clear()
+        time.sleep(0.75)
+
+    print(len(beavis))
+    print(len(finalList))
+    #make another for loop that takes the last group of < 5 UPCs out of beavis and makes appends to finalList and newFinal (and eventually mostFinal - after adding the competitive pricing)
+
+    newFinal = []
+
+    #print(len(beavis))  #should be 0 after adding the last loop for the < 5 UPCs group
+    #print(finalList[0])
+    #print(finalList[2][4])
+
+    #Here's where I take out any product that won't sell by eliminating products without a seller rank
+    for x in range(len(finalList)):
+        if finalList[x][4] != 'No Rank' and int(finalList[x][4]) < 35000:  #Optionally here, I could also eliminate items with a weight > some limit
+            newFinal.append(finalList[x])
+
+    finalList.clear()
+
+    #print(finalList)
+    #(newFinal[0])
+
+    #now feed the remaining newFinal into the amazoncomp, spit of the moreFinal list, and then scrub the morefinal into absoluteFinal
+
+    #REMEMBER TO TURN THE SELLER RANK INTO AN INT!
+    #SCRUB OUT THE INSTANCES WITH UNAVAILABLE AMAZON PRICES
+
+    print(datetime.datetime.now())
+
+    #Here's where I get the BuyBox price + Shipping cost as one "Landing Price"
+    n = len(newFinal)
+
+    print(n)
+    t = n//9  #don't forget about the remainder...
+
+    moreFinalish = []
+
+    #now...
+    # 1 scrub out the 'No Rank's and High Ranks - half done
+    # 2 run the newFinal[] against the Amazon Competitive Pricing API
+    # 2 do the final analysis,
+    # 3 output the list via email or whatever
+
+    for w in range(t): #for i in range(t): #uncomment this and let er rip when ready to iterate through each group of 5
+        #change the next line so that the function returns a value into a list bracket, then append beavis values into it
+        #add in a "try:" statement that addends a safe output to interim if the amazoncomp connection fails
+        interim.append(WalAmClass.amazoncompy(newFinal[0][2], newFinal[1][2], newFinal[2][2], newFinal[3][2], newFinal[4][2]
+                                             , newFinal[5][2], newFinal[6][2], newFinal[7][2], newFinal[8][2]))
+        #print(interim)
+        for k in range(9):
+            moreFinalish.append([newFinal[0][0], newFinal[0][1], newFinal[0][2], interim[0][0], int(newFinal[0][4]),
+                                 newFinal[0][3]])
+            print([newFinal[0][0], newFinal[0][1], newFinal[0][2], interim[0][0], int(newFinal[0][4]), newFinal[0][3]])
+            del newFinal[0]
+            del interim[0][0]
+        interim.clear()
+        time.sleep(0.75)
+
+    #print(moreFinalish[0])
+    print(len(newFinal))
+    print(len(moreFinalish))
+
+    #Here's where I compare prices, add in nested fields to each element for:
+    # 1 TotalFees (FBA Fees + inboundShipping)
+    # 2 Item Margin
+    # 3 twoWeekPeriodProfit (margin x units expected to sell in a 2 weeks)
+    # then I produce a final list presented in descending order of greatest profit after eliminating items with no profit
+
+    evenMoreFinal = []  #THIS IS needed because I can't delete elements of a moreFinalish since it's tied to the for loop range
+    fees = 0.0
+    profit = 0.0
+    shipping = 0.0  #add in inbound shipping to FBA!!!!!
+
+    for a in range(len(moreFinalish)):
+        if (moreFinalish[a][5]) < 1:
+            fees = 2.23 + 0.55 + (moreFinalish[a][3] * 0.15)
+            shipping = 0.0  #add in inbound shipping to FBA!!!!!
+        elif (moreFinalish[a][5]) < 2:
+            fees = 2.23 + 0.55 + 0.39 + (moreFinalish[a][3] * 0.15)
+            shipping = 0.0  #add in inbound shipping to FBA!!!!!
+        elif (moreFinalish[a][5]) >= 2:
+            fees = 2.23 + 1.34 + ((moreFinalish[a][5] - 2) * 0.39) + (moreFinalish[a][3] * 0.15)
+            shipping = 0.0  #add in inbound shipping to FBA!!!!!
+        if (moreFinalish[a][3] - (moreFinalish[a][1] + fees + shipping)) > 0.0:
+            profit = moreFinalish[a][3] - ((moreFinalish[a][1]*1.075) + fees + shipping) # 7.5% tax rate in NE
+            moreFinalish[a].append(fees)
+            moreFinalish[a].append(profit)
+        #else:  #NO!! this will make the for loop not work since it changes the range length
+        #    del moreFinalish[a]
+
+    for a in range(len(moreFinalish)):
+        if len(moreFinalish[a]) > 6:
+            moreFinalish[a][6] = round(moreFinalish[a][6], 2)
+            moreFinalish[a][7] = round(moreFinalish[a][7], 2)
+            evenMoreFinal.append(moreFinalish[a])
+
+    moreFinalish.clear()
+    #print(moreFinalish)
+    evenMoreFinal.sort(key=lambda y: y[7], reverse=True)
+
+    for f in evenMoreFinal:
+        if (f[7]/f[1]) > .399 and f[3] != 7599.0 and f[5] < 3:
+            print(f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7])
+
+    print(datetime.datetime.now())
+
+
+def bestBuyGamesy():
+    import WalAmClass
+    import time
+    import datetime
+    print(datetime.datetime.now())
+    beavis = WalAmClass.bestbuygames()
+
+    n = len(beavis)
+
+    print(n) #this shows each page iteration and count
+    t = n//5
+
+    finalList = []
+
+    interim = []
+
+    #Get ASIN numbers, AmRank, and shipping Weight for each UPC, and combine UPC, Price, Amazon ASIN, Amazon weight, and Amazon Rank into one list item
+    for i in range(t): #iterate through each group of 5
+        #the function returns a value into a list bracket, then appends beavis values into it
+        upcs = []
+        safeUpcs = ['012345678900', '012345678901', '012345678902', '012345678903', '012345678904']  #bogus UPCs to avoide fatal error
+        for g in range(5):
+            try:
+                upcChal = beavis[g][0]
+                upcs.append(upcChal)
+            except:
+                upcChal = safeUpcs[0]
+                del safeUpcs[0]
+                upcs.append(upcChal)
+        try:
+            interim.append(WalAmClass.amazonprod(upcs[0], upcs[1], upcs[2], upcs[3], upcs[4]))
+        except:
+            interim.append([['Not Available', 0.0, 'No Rank'], ['Not Available', 0.0, 'No Rank'],
+                            ['Not Available', 0.0, 'No Rank'], ['Not Available', 0.0, 'No Rank'],
+                            ['Not Available', 0.0, 'No Rank']])
+        #print(interim)
+        for z in range(5):
+            finalList.append([upcs[0], beavis[0][1], interim[0][0][0], interim[0][0][1], interim[0][0][2]])
+            print([upcs[0], beavis[0][1], interim[0][0][0], interim[0][0][1], interim[0][0][2]])
+            del upcs[0]
+            del beavis[0]
+            del interim[0][0]
+        interim.clear()
+        time.sleep(0.75)
+
+    print(len(beavis))
+    print(len(finalList))
+    #make another for loop that takes the last group of < 5 UPCs out of beavis and makes appends to finalList and newFinal
+    # (and eventually mostFinal - after adding the competitive pricing)
+
+    newFinal = []
+
+    #print(len(beavis))  #should be 0 after adding the last loop for the < 5 UPCs group
+    #print(finalList[0])
+    #print(finalList[2][4])
+
+    #Here's where I take out any product that won't sell by eliminating products without a seller rank
+    for x in range(len(finalList)):
+        if finalList[x][4] != 'No Rank' and int(finalList[x][4]) < 7500:  #Optionally here, I could also eliminate items with a weight > some limit
+            newFinal.append(finalList[x])
+
+    finalList.clear()
+
+    #print(finalList)
+    #(newFinal[0])
+
+    #now feed the remaining newFinal into the amazoncomp, spit of the moreFinal list, and then scrub the morefinal into absoluteFinal
+
+    #SELLER RANK MUST BE AN INT!
+    #SCRUB OUT THE INSTANCES WITH UNAVAILABLE AMAZON PRICES
+
+    print(datetime.datetime.now())
+
+    #get BuyBox price + Shipping cost as one "Landing Price"
+    n = len(newFinal)
+
+    print(n)
+    t = n//9  #don't forget about the remainder...
+
+    moreFinalish = []
+
+    #now...
+    # 1 scrub out the 'No Rank's and High Ranks - half done
+    # 2 run the newFinal[] against the Amazon Competitive Pricing API
+    # 2 do the final analysis,
+    # 3 output the list via email or whatever
+
+    for w in range(t): #for i in range(t): #uncomment this and let er rip when ready to iterate through each group of 5
+        #change the next line so that the function returns a value into a list bracket, then append beavis values into it
+        #add in a "try:" statement that addends a safe output to interim if the amazoncomp connection fails
+        interim.append(WalAmClass.amazoncompy(newFinal[0][2], newFinal[1][2], newFinal[2][2], newFinal[3][2], newFinal[4][2]
+                                             , newFinal[5][2], newFinal[6][2], newFinal[7][2], newFinal[8][2]))
+        #print(interim)
+        for k in range(9):
+            moreFinalish.append([newFinal[0][0], newFinal[0][1], newFinal[0][2], interim[0][0], int(newFinal[0][4]),
+                                 newFinal[0][3]])
+            print([newFinal[0][0], newFinal[0][1], newFinal[0][2], interim[0][0], int(newFinal[0][4]), newFinal[0][3]])
+            del newFinal[0]
+            del interim[0][0]
+        interim.clear()
+        time.sleep(0.75)
+
+    #print(moreFinalish[0])
+    print(len(newFinal))
+    print(len(moreFinalish))
+
+    #Here's where I compare prices, add in nested fields to each element for:
+    # 1 TotalFees (FBA Fees + inboundShipping)
+    # 2 Item Margin
+    # 3 twoWeekPeriodProfit (margin x units expected to sell in a 2 weeks)
+    # then I produce a final list presented in descending order of greatest profit after eliminating items with no profit
+
+    evenMoreFinal = []  #THIS IS needed because I can't delete elements of a moreFinalish since it's tied to the for loop range
+    fees = 0.0
+    profit = 0.0
+    shipping = 0.0  #add in inbound shipping to FBA!!!!!
+
+    for a in range(len(moreFinalish)):
+        if (moreFinalish[a][5]) < 1:
+            fees = 2.23 + 0.55 + (moreFinalish[a][3] * 0.15)
+            shipping = 0.0  #add in inbound shipping to FBA!!!!!
+        elif (moreFinalish[a][5]) < 2:
+            fees = 2.23 + 0.55 + 0.39 + (moreFinalish[a][3] * 0.15)
+            shipping = 0.0  #add in inbound shipping to FBA!!!!!
+        elif (moreFinalish[a][5]) >= 2:
+            fees = 2.23 + 1.34 + ((moreFinalish[a][5] - 2) * 0.39) + (moreFinalish[a][3] * 0.15)
+            shipping = 0.0  #add in inbound shipping to FBA!!!!!
+        if (moreFinalish[a][3] - (moreFinalish[a][1] + fees + shipping)) > 0.0:
+            profit = moreFinalish[a][3] - ((moreFinalish[a][1]*1.075) + fees + shipping) # 7.5% tax rate in NE
+            moreFinalish[a].append(fees)
+            moreFinalish[a].append(profit)
+        #else:  #NO!! this will make the for loop not work since it changes the range length
+        #    del moreFinalish[a]
+
+    for a in range(len(moreFinalish)):
+        if len(moreFinalish[a]) > 6:
+            moreFinalish[a][6] = round(moreFinalish[a][6], 2)
+            moreFinalish[a][7] = round(moreFinalish[a][7], 2)
+            evenMoreFinal.append(moreFinalish[a])
+
+    moreFinalish.clear()
+    #print(moreFinalish)
+    evenMoreFinal.sort(key=lambda y: y[7], reverse=True)
+
+    for f in evenMoreFinal:
+        if (f[7]/f[1]) > .399 and f[3] != 7599.0:
+            print(f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7])
+
+    print(datetime.datetime.now())
