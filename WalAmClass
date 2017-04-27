@@ -1,0 +1,246 @@
+def bestbuygamesy():
+    #import urllib.request
+    import urllib.parse, urllib.request, time
+    import json
+
+    #first get the count of pages for the whole feed
+    get_url = 'http://api.remix.bestbuy.com/v1/products(type=game)?format=json&apiKey=xxxxxxxxxxxxxxxxxxxxxxxx'
+    response = urllib.request.urlopen(get_url).read()
+    almostThere = response.decode(encoding='UTF-8')
+    whatIwantWl = json.loads(almostThere)
+    pages = whatIwantWl['totalPages']
+    print(pages)
+
+    #create a temporary array and fill it with product names and sale prices of products that are onsale and available online, etc.
+    spit_out = []
+
+    for each_page in range(pages)[1:]:
+        try:
+            get_url = 'http://api.remix.bestbuy.com/v1/products(type=game)?format=json&apiKey=xxxxxxxxxxxxxxxxxxxxxxxx&page=%d'\
+                      % each_page
+            #print(get_url)
+            response = urllib.request.urlopen(get_url)
+            time.sleep(0.2)
+            taco = response.read()
+            almostThere = taco.decode(encoding='UTF-8')
+            whatIwantWl = json.loads(almostThere)
+            prods = whatIwantWl['products']
+            for each_prod in range(len(prods)):
+                #if prods[each_prod]['onSale'] == True and
+                if prods[each_prod]['source'] == 'bestbuy' and \
+                                prods[each_prod]['onlineAvailability'] == True:
+                    spit_out.append([prods[each_prod]['upc'], prods[each_prod]['salePrice']])
+                    print(prods[each_prod]['upc'], prods[each_prod]['salePrice'])
+        except:
+            continue
+
+    return spit_out
+
+def walcleary():
+    import urllib.request
+    import urllib.parse, urllib.request
+    import json
+    import zlib
+
+    get_url = 'http://api.walmartlabs.com/v1/feeds/clearance?apikey=xxxxxxxxxxxxxxxxxx' #&categoryId=3944'  #categoryID needed?
+
+    response = urllib.request.urlopen(get_url).read()
+
+    decompressed_data = zlib.decompress(response, 16 + zlib.MAX_WBITS)
+    almostThere = decompressed_data.decode(encoding='UTF-8')
+
+    whatIwantWl = json.loads(almostThere)
+
+    return enumerate(whatIwantWl["items"])
+
+def amazonprody(upc1, upc2, upc3, upc4, upc5):
+    import hashlib, hmac, base64, datetime, urllib.parse, urllib.request, xml.etree.ElementTree as ET
+    from urllib.parse import quote
+
+    AWSAccessKeyIdname = "AWSAccessKeyId"  # — Your Amazon MWS account is identified by your access key Id, which Amazon MWS uses to look up your Secret Access Key.
+    AWSAccessKeyId = "xxxxxxxxxxxxxxxxxxxxxxxx"
+    Actionname = "Action"  # — The action you want to perform on the endpoint, such as the operation GetFeedSubmissionResult.
+    Action = "GetMatchingProductForId"  # this could be dynamic if I wanted to do more than just look up products
+    IdListId1name = "IdList.Id.1"
+    IdListId1 = upc1
+    IdListId2name = "IdList.Id.2"
+    IdListId2 = upc2
+    IdListId3name = "IdList.Id.3"
+    IdListId3 = upc3
+    IdListId4name = "IdList.Id.4"
+    IdListId4 = upc4
+    IdListId5name = "IdList.Id.5"
+    IdListId5 = upc5
+    IdTypename = "IdType"
+    IdType = "UPC"
+    MarketplaceIdname = "MarketplaceId"  # — An optional structured list of marketplace Ids for supporting sellers registered in multiple marketplaces. For example, two marketplace Ids would be formatted as: &MarketplaceIdList.Id.1=xxxxxxxxxxxxxxxxxxxx&MarketplaceIdList.Id.2=xxxxxxxxxxxxxxxxxxxx. Note that the MarketplaceIdList parameter is not used in JP and CN.
+    MarketplaceId = "xxxxxxxxxxxxxxxxxxxxxxxx"
+    SellerIdname = "SellerId"  # or Merchant — Your seller or merchant identifier.
+    SellerId = "xxxxxxxxxxxxxxxxxxxxxxxx"
+    SignatureMethodname = "SignatureMethod"  # — The HMAC hash algorithm you are using to calculate your signature. Both HmacSHA256 and HmacSHA1 are supported hash algorithms, but Amazon recommends using HmacSHA256.
+    SignatureMethod = "HmacSHA256"
+    SignatureVersionname = "SignatureVersion"  # — Which signature version is being used. This is Amazon MWS-specific information that tells Amazon MWS the algorithm you used to form the string that is the basis of the signature. For Amazon MWS, this value is currently SignatureVersion=2.
+    SignatureVersion = "2"
+    Timestampname = "Timestamp"  # — Each request must contain the timestamp of the request. Depending on the API function you're using, you can provide an expiration date and time for the request instead of the timestamp.
+    almostTimestamp = datetime.datetime.utcnow().isoformat('T')  # Iso Compliant Timestamp.
+    Timestamp = ((almostTimestamp[0:19]) + 'Z')  # Iso Compliant Timestamp.
+    Versionname = "Version"
+    Version = "2011-10-01"
+
+    HTTPVerb = "POST"
+    ValueOfHostHeaderInLowercase = "mws.amazonservices.com"
+    HTTPRequestURI = "/Products/2011-10-01"
+    CanonicalizedQueryString = quote(AWSAccessKeyIdname) + "=" + quote(AWSAccessKeyId) + "&" + quote(
+        Actionname) + "=" + quote(Action) + "&" + quote(IdListId1name) + "=" + quote(IdListId1) + "&" + quote(
+        IdListId2name) + "=" + quote(IdListId2) + "&" + quote(IdListId3name) + "=" + quote(IdListId3) + "&" + quote(
+        IdListId4name) + "=" + quote(IdListId4) + "&" + quote(IdListId5name) + "=" + quote(IdListId5) + "&" + quote(
+        IdTypename) + "=" + quote(IdType) + "&" + quote(MarketplaceIdname) + "=" + quote(MarketplaceId) + "&" + quote(
+        SellerIdname) + "=" + quote(SellerId) + "&" + quote(SignatureMethodname) + "=" + quote(
+        SignatureMethod) + "&" + quote(SignatureVersionname) + "=" + quote(SignatureVersion) + "&" + quote(
+        Timestampname) + "=" + quote(Timestamp) + "&" + quote(Versionname) + "=" + quote(
+        Version)  #"AWSAccessKeyId=xxxxxxxxxxxxxxxxxxxxxxxx&Action=ListMatchingProducts&MarketplaceId=xxxxxxxxxxxxxxxxxxxxxxxx&Query=" + Query + "&SellerId=xxxxxxxxxxxxxxxxxxxxxxxx&SignatureMethod=HmacSHA256&SignatureVersion=2&Timestamp=" + IsoStamp + "&Version=2011-10-01"  //example: AWSAccessKeyId=xxxxxxxxxxxxxxxxxxxxxxxx&Action=ListMatchingProducts&MarketplaceId=xxxxxxxxxxxxxxxxxxxxxxxx&Query=xxxxxxxxxxxxxxxxxxxx&SellerId=xxxxxxxxxxxxxxxxxxxxxxxx&SignatureMethod=HmacSHA256&SignatureVersion=2&Timestamp=2014-10-26T01%3A14%3A40Z&Version=2011-10-01
+
+    stringToSign = HTTPVerb + "\n" + ValueOfHostHeaderInLowercase + "\n" + HTTPRequestURI + "\n" + CanonicalizedQueryString  #from the preceding step
+
+    encodedsignature = hmac.new(b'xxxxxxxxxxxxxxxxxxxxxxxx', str.encode(stringToSign),
+                                hashlib.sha256).digest()
+
+    signature = base64.b64encode(encodedsignature).decode()
+
+    url = "https://" + ValueOfHostHeaderInLowercase + HTTPRequestURI + "?" + CanonicalizedQueryString + "&Signature=" + quote(
+        signature, '')
+
+    headers = {'Host': 'mws.amazonservices.com', 'Content-Type': 'text/xml',
+               'x-amazon-user-agent': 'xxxxxxxxxxxxxxxxxxxxxxxx (Language=Python)'}
+    req = urllib.request.Request(method=HTTPVerb, url=url, headers=headers)
+    response = urllib.request.urlopen(req)
+    the_page = response.read()
+    root = ET.fromstring(the_page)
+
+    total = []
+
+
+    for d in range(5):
+        try: #condition here checks for 'NumberOfItems' and matches the ASIN that == 1
+            ic = 0 #this variable will be used to check the Item Number Count and find the ASIN with only 1 unit
+                   # (to exclude bundles)
+            #add the seller rank category to the output in order to filter out and sort by category
+            if len(root[d][0][ic][3]) > 0:
+                total.append([root[d][0][ic][0][0][1].text, float(root[d][0][ic].find('.//*[@Units="pounds"]').text),
+                              root[d][0][ic][3][0][1].text])
+            else:
+                total.append([root[d][0][ic][0][0][1].text, float(root[d][0][ic].find('.//*[@Units="pounds"]').text),
+                              'No Rank'])
+        except:
+            try:
+                total.append([root[d][0][0][0][0][1].text, 1.00, 'No Rank'])
+            except:
+                total.append(['Not Available', 0.00, 'No Rank'])
+    return total
+
+    #append the AmazonPrice, weight, sellerRank, who's selling (Amzn vs 3rd Party), ASIN to final list and then append
+    #relevant elements to the corresponding lines.  UPC should be the key/root/.
+    #Final analysis on what stays goes and then filtering/sorting happens to finalList
+
+def amazoncompy(asin1, asin2, asin3, asin4, asin5, asin6, asin7, asin8, asin9):  #This is supposed to be able to take 10/second but for some reason it doesn't work past 9
+
+#Start - Adding this section to handle fatal error when two or more ASINs at a time are the same
+    test = [asin1, asin2, asin3, asin4, asin5, asin6, asin7, asin8, asin9]
+    safety = ['B007PRFYVG', 'B00AXA7FVO', 'B00HCNHDN0', 'B00IKPYKWG', 'B00LOR4928', 'B00M9VWFOM', 'B00EOE0WKQ', 'B00BWYRF7E', 'B00KC6I06S']
+    #these are bogus ASINs that will only be used to replace duplicates if found in the def arguments to prevent error
+    #It is extremely important that any safety asin could never be sold at bestbuy so it's impossible to throw an error
+    #The first couple safety ASINs $7600+ diamond rings... the rest are kindle fire products sold exclusively at Amazon
+
+    for asn in test:
+        if test.count(asn) > 1:
+            #replaces a 'safety' asin at the same index point of the element being removed
+            ind = test.index(asn)
+            test.remove(asn)
+            test.insert(ind, safety[0])
+            del safety[0]
+
+#this section handles potential for error when two or more ASINs at a time are the same
+
+    import hashlib, hmac, base64, datetime, urllib.parse, urllib.request, xml.etree.ElementTree as ET
+    from urllib.parse import quote
+
+    AWSAccessKeyIdname = "AWSAccessKeyId"  # — Your Amazon MWS account is identified by your access key Id, which Amazon MWS uses to look up your Secret Access Key.
+    AWSAccessKeyId = "xxxxxxxxxxxxxxxxxxxxxxxx"
+    Actionname = "Action"  # — The action you want to perform on the endpoint, such as the operation GetFeedSubmissionResult.
+    Action = "GetCompetitivePricingForASIN"
+
+    ASINListASIN1name = "ASINList.ASIN.1"
+    ASINListASIN1 = test[0]
+    ASINListASIN2name = "ASINList.ASIN.2"
+    ASINListASIN2 = test[1]
+    ASINListASIN3name = "ASINList.ASIN.3"
+    ASINListASIN3 = test[2]
+    ASINListASIN4name = "ASINList.ASIN.4"
+    ASINListASIN4 = test[3]
+    ASINListASIN5name = "ASINList.ASIN.5"
+    ASINListASIN5 = test[4]
+    ASINListASIN6name = "ASINList.ASIN.6"
+    ASINListASIN6 = test[5]
+    ASINListASIN7name = "ASINList.ASIN.7"
+    ASINListASIN7 = test[6]
+    ASINListASIN8name = "ASINList.ASIN.8"
+    ASINListASIN8 = test[7]
+    ASINListASIN9name = "ASINList.ASIN.9"
+    ASINListASIN9 = test[8]
+    MarketplaceIdname = "MarketplaceId"  # — An optional structured list of marketplace Ids for supporting sellers registered in multiple marketplaces. For example, two marketplace Ids would be formatted as: &MarketplaceIdList.Id.1=XXXXXXXX&MarketplaceIdList.Id.2=XXXXXXXXXX. Note that the MarketplaceIdList parameter is not used in JP and CN.
+    MarketplaceId = "xxxxxxxxxxxxxxxxxxxxxxxx"
+    SellerIdname = "SellerId"  # or Merchant — Your seller or merchant identifier.
+    SellerId = "xxxxxxxxxxxxxxxxxxxxxxxx"
+    SignatureMethodname = "SignatureMethod"  # — The HMAC hash algorithm you are using to calculate your signature. Both HmacSHA256 and HmacSHA1 are supported hash algorithms, but Amazon recommends using HmacSHA256.
+    SignatureMethod = "HmacSHA256"
+    SignatureVersionname = "SignatureVersion"  # — Which signature version is being used. This is Amazon MWS-specific information that tells Amazon MWS the algorithm you used to form the string that is the basis of the signature. For Amazon MWS, this value is currently SignatureVersion=2.
+    SignatureVersion = "2"
+    Timestampname = "Timestamp"  # — Each request must contain the timestamp of the request. Depending on the API function you're using, you can provide an expiration date and time for the request instead of the timestamp.
+    almostTimestamp = datetime.datetime.utcnow().isoformat('T')  # Iso Compliant Timestamp.
+    Timestamp = ((almostTimestamp[0:19]) + 'Z')  # Iso Compliant Timestamp.
+    Versionname = "Version"
+    Version = "2011-10-01"
+
+    HTTPVerb = "POST"
+    ValueOfHostHeaderInLowercase = "mws.amazonservices.com"
+    HTTPRequestURI = "/Products/2011-10-01"
+    CanonicalizedQueryString = quote(ASINListASIN1name) + "=" + quote(ASINListASIN1) + "&" + quote(ASINListASIN2name) + \
+                               "=" + quote(ASINListASIN2) + "&" + quote(ASINListASIN3name) + "=" + quote(ASINListASIN3) + \
+                               "&" + quote(ASINListASIN4name) + "=" + quote(ASINListASIN4) + "&" + quote(ASINListASIN5name)\
+                               + "=" + quote(ASINListASIN5) + "&" + quote(ASINListASIN6name) + "=" + quote(
+        ASINListASIN6) + "&" + quote(ASINListASIN7name) + "=" + quote(ASINListASIN7) + "&" + quote(ASINListASIN8name) +\
+                               "=" + quote(ASINListASIN8) + "&" + quote(ASINListASIN9name) + "=" + quote(ASINListASIN9) +\
+                               "&" + quote(AWSAccessKeyIdname) + "=" + quote(AWSAccessKeyId) + "&" + quote(
+        Actionname) + "=" + quote(Action) + "&" + quote(MarketplaceIdname) + "=" + quote(MarketplaceId) + "&" + quote(
+        SellerIdname) + "=" + quote(SellerId) + "&" + quote(SignatureMethodname) + "=" + quote(SignatureMethod) + "&" +\
+                               quote(SignatureVersionname) + "=" + quote(SignatureVersion) + "&" + quote(
+        Timestampname) + "=" + quote(Timestamp) + "&" + quote(Versionname) + "=" + quote(Version)
+
+    stringToSign = HTTPVerb + "\n" + ValueOfHostHeaderInLowercase + "\n" + HTTPRequestURI + "\n" + CanonicalizedQueryString
+    #from the preceding step
+
+    encodedsignature = hmac.new(b'xxxxxxxxxxxxxxxxxxxxxxxx', str.encode(stringToSign),
+                                hashlib.sha256).digest()
+
+    signature = base64.b64encode(encodedsignature).decode()
+
+    url = "https://" + ValueOfHostHeaderInLowercase + HTTPRequestURI + "?" + CanonicalizedQueryString + "&Signature="\
+          + quote(signature, '')
+
+    headers = {'Host': 'mws.amazonservices.com', 'Content-Type': 'text/xml',
+               'x-amazon-user-agent': 'xxxxxxxxxxxxxxxxxxxxxxxx (Language=Python)'}
+    req = urllib.request.Request(method=HTTPVerb, url=url, headers=headers)
+    response = urllib.request.urlopen(req)
+    the_page = response.read()
+    #print(the_page)
+    root = ET.fromstring(the_page)
+
+    total = []
+
+    for d in range(9):
+        try:
+            total.append(float(root[d][0][1][0][0][1][0][1].text))
+        except:
+            total.append(0.00)
+
+    return total
